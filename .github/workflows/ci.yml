@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [main]
 env:
-  MONGO_URL:${{secrets.DATABASE_URL}}
-  JWT_SECRET:${{secrets.JWT_SECRET}}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
 jobs:
   test:
     runs-on: ubuntu-latest

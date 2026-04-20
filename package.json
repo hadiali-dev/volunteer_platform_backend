@@ -4,6 +4,7 @@
   "main": "server.js",
   "scripts": {
     "create-admin": "node scripts/createAdmin.js",
+    "git": "node scripts/git.js",
     "start": "node server.js",
     "dev": "node server.js",
     "lint": "eslint .",
