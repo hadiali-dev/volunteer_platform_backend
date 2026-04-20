@@ -28,7 +28,7 @@ const protect = async (req, res, next) => {
         req.user = currentUser;
         next();
         
-    } catch (err) {
+    } catch (_err) {
         return next(new AppError('التوكن غير صالح أو انتهت صلاحيته', 401));
     }
 };
