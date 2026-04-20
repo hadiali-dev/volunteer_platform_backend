@@ -7,7 +7,7 @@ on:
     branches: [main]
 env:
   MONGO_URL:${{secrets.DATABASE_URL}}
-  JWT_SECRE:${{secrets.JWT_SECRET}}
+  JWT_SECRET:${{secrets.JWT_SECRET}}
 jobs:
   test:
     runs-on: ubuntu-latest
