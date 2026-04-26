@@ -29,6 +29,14 @@ app.use(
 app.use(express.json());
 app.use(morgan('dev'));
 
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/v1', allRoutes);
 
