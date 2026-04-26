@@ -13,12 +13,31 @@ const authRoutes = require('./routes/authRoutes');
 const app = express();
 app.disable('etag');
 
-app.use(
-  helmet({
-    // AdminJS bootstraps its frontend with inline scripts on the login/app pages.
-    contentSecurityPolicy: false,
-  }),
-);
+const strictHelmet = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:'],
+    },
+  },
+});
+
+const adminHelmet = helmet({
+  contentSecurityPolicy: false,
+});
+
+// Keep API/routes strict while letting AdminJS use its own CSP from setup.mjs.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/admin')) {
+    return adminHelmet(req, res, next);
+  }
+  return strictHelmet(req, res, next);
+});
 app.use(cookieParser());
 app.use(
   cors({
@@ -26,6 +45,13 @@ app.use(
     credentials: true,
   }),
 );
+const rateLimit = require('express-rate-limit');
+
+app.use('/api/auth/login', rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+  message: 'محاولات كثيرة الرجاء المحاولة لاحقا'
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
