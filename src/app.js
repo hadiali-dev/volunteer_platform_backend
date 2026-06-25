@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-
+const warden =require('@hadi_ali/warden')
 const errorHandler = require('./middlewares/errorHandler');
 const AppError = require('./utils/AppError');
 const allRoutes = require('./routes/allRoutes');
@@ -12,7 +12,12 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 app.disable('etag');
-
+app.set('trust proxy', 1);
+app.use(warden({
+  
+  scorethreshold: 30,
+  knownSubdomains: ['api', 'www']
+}))
 const strictHelmet = helmet({
   contentSecurityPolicy: {
     directives: {
