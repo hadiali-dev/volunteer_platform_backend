@@ -92,6 +92,12 @@ class ApplicationService {
       );
     }
 
+    const Notification = require('../models/Notification');
+    await Notification.create({
+      user: app.volunteer,
+      message: `تم تحديث حالة طلبك للفرصة "${app.opportunity.title}" إلى: ${status === 'accepted' ? 'مقبول' : status === 'rejected' ? 'مرفوض' : status}.`,
+    });
+
     return Application.findById(appId)
       .populate('volunteer', 'name email role image active createdAt updatedAt')
       .populate({
