@@ -50,9 +50,11 @@ class ApplicationService {
         },
       });
 
+    // Filter out applications where opportunity was deleted
+    const filteredData = data.filter((app) => app.opportunity !== null);
     const total = await Application.countDocuments(query);
 
-    return { data, total };
+    return { data: filteredData, total };
   }
 
   static async getAllApplications({ skip = 0, limit = 10 } = {}) {
