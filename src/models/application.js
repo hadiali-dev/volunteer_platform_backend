@@ -24,7 +24,7 @@ const applicationSchema = new mongoose.Schema({
 applicationSchema.index({ volunteer: 1, opportunity: 1 }, { unique: true });
 
 const shouldNotifyStatusChange = (status) =>
-  status === 'accepted' || status === 'rejected';
+  ['pending', 'accepted', 'rejected'].includes(status);
 
 const syncOpportunityCapacityStatus = async (opportunityId) => {
   const opportunity = await Opportunity.findById(opportunityId)
@@ -59,19 +59,33 @@ const createStatusNotification = async ({ volunteerId, opportunityId, status }) 
   }
 
   const opportunityTitle = await resolveOpportunityTitle(opportunityId);
-  const isAccepted = status === 'accepted';
+  
+  let type, message;
+  if (status === 'accepted') {
+    type = 'application_accepted';
+    message = `تم قبول طلبك على فرصة "${opportunityTitle}".`;
+  } else if (status === 'rejected') {
+    type = 'application_rejected';
+    message = `تم رفض طلبك على فرصة "${opportunityTitle}".`;
+  } else if (status === 'pending') {
+    type = 'application_pending';
+    message = `لقد تقدمت بطلب للفرصة "${opportunityTitle}".`;
+  }
 
   await Notification.create({
     user: volunteerId,
-    type: isAccepted ? 'application_accepted' : 'application_rejected',
-    message: isAccepted
-      ? `تم قبول طلبك على فرصة "${opportunityTitle}".`
-      : `تم رفض طلبك على فرصة "${opportunityTitle}".`,
+    type,
+    message,
   });
 };
 
 applicationSchema.pre('save', async function preloadPreviousStatus() {
-  if (this.isNew || !this.isModified('status')) {
+  if (this.isNew) {
+    this.$locals.isNew = true;
+    return;
+  }
+
+  if (!this.isModified('status')) {
     return;
   }
 
@@ -84,17 +98,19 @@ applicationSchema.pre('save', async function preloadPreviousStatus() {
 
 applicationSchema.post('save', async function notifyOnSave(doc) {
   const previousStatus = doc.$locals.previousStatus;
-  if (!previousStatus || previousStatus === doc.status) {
-    return;
+  const isNew = doc.$locals.isNew;
+
+  if (isNew || (previousStatus && previousStatus !== doc.status)) {
+    await createStatusNotification({
+      volunteerId: doc.volunteer,
+      opportunityId: doc.opportunity,
+      status: doc.status,
+    });
+
+    if (doc.status === 'accepted') {
+      await syncOpportunityCapacityStatus(doc.opportunity);
+    }
   }
-
-  await createStatusNotification({
-    volunteerId: doc.volunteer,
-    opportunityId: doc.opportunity,
-    status: doc.status,
-  });
-
-  await syncOpportunityCapacityStatus(doc.opportunity);
 });
 
 applicationSchema.pre('findOneAndUpdate', async function preloadPreviousStatusForQuery() {
